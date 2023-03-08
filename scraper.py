@@ -21,22 +21,30 @@ result = requests.get(url)
 soup = BeautifulSoup(result.text, "html.parser")
 
 entries = soup.find_all("table", id="pokedex")[0].find_all("tbody")[0].find_all("tr")
+# Take out partner pikachu and eevee
+entries.pop(33)
 
-for i, pokemon in enumerate(entries[69:70]):
-    varnames = ('id', 'dexno', 'name', 'height', 'weight', 'image', 'types', 'hp', 'atk', 'defense','spatk',
-                'spdef', 'spd', 'total')
+for i, pokemon in enumerate(entries[160:161]):
+    varnames = ('id', 'dexno', 'name', 'height', 'weight', 'image', 'types', 'abilities', 'hp', 'atk', 'defense','spatk',
+                'spdef', 'spd', 'total', 'is_mega', 'is_alolan', 'is_galarian', 'is_hisuian', 'is_paldean')
     data = {}
     # Creates list of every piece of data of the pokemon
     info = pokemon.find_all("td")
+    
+    # Gets name of pokemon, but if pokemon is a different variation it will replace the name with the variation name. e.g. Mega Venusaur
+    name = info[1].find_all("a")[0].getText()
+    if info[1].find_all("small"):
+        name = info[1].find_all("small")[0].getText()
+    
+    if 'partner' in name.lower():
+        print(name)
+        continue
     
     # Unique index for each data entry
     id = i
     # Pokedex number for each pokemon. Not unique (variations of the same pokemon have the same dex number)
     dexno = int(info[0]['data-sort-value'])
-    # Gets name of pokemon, but if pokemon is a different variation it will replace the name with the variation name. e.g. Mega Venusaur
-    name = info[1].find_all("a")[0].getText()
-    if info[1].find_all("small"):
-        name = info[1].find_all("small")[0].getText()
+        
     # Puts types into list
     types = []
     for t in info[2].find_all("a"):
@@ -77,15 +85,28 @@ for i, pokemon in enumerate(entries[69:70]):
     height = active.find_all(class_ = "vitals-table")[0].find_all("tr")[3].find("td").getText()
     weight = active.find_all(class_ = "vitals-table")[0].find_all("tr")[4].find("td").getText()
     image = active.find_all("picture")[0].find_all("img")[0]["src"]
-    abilities = active.find_all(class_ = "vitals-table")[0].find_all("tr")[5].find(class_ = "text-muted")
     
-    print(name)
-    print(image)    
+    abilities = []
+    ability_tags = active.find_all(class_ = "vitals-table")[0].find_all("tr")[5].find_all(class_ = "text-muted")
+    for a in ability_tags:
+        abilities.append(a.find_all("a")[0].getText())
     
+    is_mega, is_galarian, is_alolan, is_hisuian, is_paldean = False, False, False, False, False
+    if 'mega' in name.lower():
+        is_mega = True
+    elif 'alolan' in name.lower():
+        is_alolan = True
+    elif 'galarian' in name.lower():
+        is_galarian = True
+    elif 'hisuian' in name.lower():
+        is_hisuian = True
+    elif 'paldean' in name.lower():
+        is_paldean = True
     
     # Put all data into a dictionary
     for i in varnames:
         data[i] = locals()[i]
     
+    print(name)
     # Output to json file
     # write_json(data)
