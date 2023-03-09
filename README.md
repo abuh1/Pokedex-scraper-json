@@ -1,1 +1,1 @@
-# Pokedex-scraped-JSON
+# Pokedex scraper using Python (BeautifulSoup and regex)
