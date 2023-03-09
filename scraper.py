@@ -1,19 +1,17 @@
 # Web scraper for https://pokemondb.net/pokedex/all - outputs into JSON file
+import re
 import json
 from bs4 import BeautifulSoup
 import requests
 
 # Function to write to json file
-def write_json(data, filename='draftdex.json'):
+def write_json(data, filename='dex.json'):
     with open(filename, 'r+') as f:
         # Load existing data into a dict (empty json file)
         file_data = json.load(f)
         file_data["pokemon"].append(data)
         f.seek(0)
         json.dump(file_data, f, indent = 4)
-        
-path = './'
-fileName = 'test'
 
 # Start scraping
 url = 'https://pokemondb.net/pokedex/all'
@@ -23,9 +21,10 @@ soup = BeautifulSoup(result.text, "html.parser")
 entries = soup.find_all("table", id="pokedex")[0].find_all("tbody")[0].find_all("tr")
 # Take out partner pikachu and eevee
 entries.pop(33)
+entries.pop(178)
 
-for i, pokemon in enumerate(entries[160:161]):
-    varnames = ('id', 'dexno', 'name', 'height', 'weight', 'image', 'types', 'abilities', 'hp', 'atk', 'defense','spatk',
+for pokemon in entries:
+    varnames = ('dexno', 'name', 'height', 'weight', 'image', 'types', 'abilities', 'hp', 'atk', 'defense','spatk',
                 'spdef', 'spd', 'total', 'is_mega', 'is_alolan', 'is_galarian', 'is_hisuian', 'is_paldean')
     data = {}
     # Creates list of every piece of data of the pokemon
@@ -39,9 +38,6 @@ for i, pokemon in enumerate(entries[160:161]):
     if 'partner' in name.lower():
         print(name)
         continue
-    
-    # Unique index for each data entry
-    id = i
     # Pokedex number for each pokemon. Not unique (variations of the same pokemon have the same dex number)
     dexno = int(info[0]['data-sort-value'])
         
@@ -74,17 +70,17 @@ for i, pokemon in enumerate(entries[160:161]):
         tab_names.append(label.getText())
     
     # Get each tab panel in a list
-    info_tabs = details_soup.find_all(class_ = "tabset-basics")[0].find_all(class_ = "sv-tabs-panel-list")[0].find_all(class_ = "sv-tabs-panel")
+    info_tabs = details_soup.find_all(class_ = "tabset-basics")[0].find_all(class_ = "sv-tabs-panel-list")[0].find_all(class_ = "sv-tabs-panel", id=re.compile(r'tab-basic-[\d]+'))
     
     # Choose current tab info for the pokemon
     zipped_tabs = list(zip(tab_names, info_tabs))
-    for tabs in zipped_tabs:
-        if tabs[0] == name:
-            active = tabs[1]
+    for tab in zipped_tabs:
+        if tab[0] == name:
+            active = tab[1]
     # Scrape the rest of the info from active tab
     height = active.find_all(class_ = "vitals-table")[0].find_all("tr")[3].find("td").getText()
     weight = active.find_all(class_ = "vitals-table")[0].find_all("tr")[4].find("td").getText()
-    image = active.find_all("picture")[0].find_all("img")[0]["src"]
+    image = active.find_all(class_ = "grid-col span-md-6 span-lg-4 text-center")[0].find_all("img")[0]["src"]
     
     abilities = []
     ability_tags = active.find_all(class_ = "vitals-table")[0].find_all("tr")[5].find_all(class_ = "text-muted")
@@ -103,10 +99,13 @@ for i, pokemon in enumerate(entries[160:161]):
     elif 'paldean' in name.lower():
         is_paldean = True
     
+    heading = details_soup.find_all("h1")[0].getText()
+    if heading not in name:
+        name = name + ' ' + heading
+    
     # Put all data into a dictionary
     for i in varnames:
         data[i] = locals()[i]
-    
-    print(name)
+        
     # Output to json file
-    # write_json(data)
+    write_json(data)
