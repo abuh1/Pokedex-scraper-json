@@ -34,10 +34,7 @@ for pokemon in entries:
     name = info[1].find_all("a")[0].getText()
     if info[1].find_all("small"):
         name = info[1].find_all("small")[0].getText()
-    
-    if 'partner' in name.lower():
-        print(name)
-        continue
+
     # Pokedex number for each pokemon. Not unique (variations of the same pokemon have the same dex number)
     dexno = int(info[0]['data-sort-value'])
         
