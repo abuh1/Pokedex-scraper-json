@@ -106,3 +106,4 @@ for pokemon in entries:
         
     # Output to json file
     write_json(data)
+
